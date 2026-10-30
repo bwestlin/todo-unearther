@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0 - 2026-10-30
+
+### Added
+
+- Add todo-unearther CLI for repository TODO discovery
+
+### Documentation
+
+- Fix image link
+
+### Fixed
+
+- Normalize paths across macOS and Windows
+
 ## Unreleased
 
 ### Added
