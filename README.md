@@ -9,7 +9,7 @@
 [![Crates.io](https://img.shields.io/crates/v/todo-unearther.svg)](https://crates.io/crates/todo-unearther)
 [![Dependencies](https://deps.rs/repo/github/bwestlin/todo-unearther/status.svg)](https://deps.rs/repo/github/bwestlin/todo-unearther)
 
-![Animated terminal demo](https://raw.githubusercontent.com/bwestlin/todo-unearther/main/assets/todo-unearther-demo.gif)
+![Animated terminal demo](assets/todo-unearther-demo.gif)
 
 <sub>Synthetic examples rendered by the real output code. No real repository or account data.</sub>
 
