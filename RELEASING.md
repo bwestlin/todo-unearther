@@ -9,6 +9,10 @@ not publish to crates.io.
 Install `cargo-release` and `git-cliff`, authenticate using `cargo login`, and
 start from a clean, current `main` branch with green CI.
 
+Use `just changelog-preview` to review commits since the last release, then
+curate the user-facing notes under `## Unreleased` in `CHANGELOG.md`. Commit
+those notes before starting the release.
+
 ```sh
 just check-all
 just package
@@ -37,3 +41,12 @@ the missing steps without republishing that version.
 
 The `_changelog-release` recipe prints a preview during dry runs and writes
 `CHANGELOG.md` only during an executed release.
+
+The hook only promotes the curated Unreleased notes to the version and UTC
+date, leaving a fresh Unreleased heading above them. Previous release entries
+are preserved. git-cliff provides the commit preview; release notes remain
+manually curated.
+
+For a changelog correction after publication, make a normal follow-up commit.
+The corrected file will be included in the next crate version; the existing
+release tag and published crate are kept intact.

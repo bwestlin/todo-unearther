@@ -1,20 +1,8 @@
 # Changelog
 
-## 0.1.0 - 2026-10-30
-
-### Added
-
-- Add todo-unearther CLI for repository TODO discovery
-
-### Documentation
-
-- Fix image link
-
-### Fixed
-
-- Normalize paths across macOS and Windows
-
 ## Unreleased
+
+## 0.1.0 - 2026-10-30
 
 ### Added
 
@@ -31,11 +19,6 @@
 - Configurable console line spacing via `--line-spacing` and
   `report.line_spacing`, defaulting to one empty row between all rendered lines
   with continuous tree guides.
-- Correct width budgeting for long continuation lines after inline TODO headers.
-- Console hyperlinks close at each line boundary and reopen after indentation
-  when wrapped, keeping spacer rows and tree guides outside clickable spans.
-- Portable canonical-path handling for macOS preview checks, Windows source
-  links, and deterministic report generation through directory aliases.
 - Title/link GitHub enrichment, with issue state retained only for explicit
   policies; removed issue-first grouping and visible parser/line-range notes.
 - Same-indent continuation comments, including issue URLs on following lines.
@@ -47,3 +30,15 @@
 - Read-only GitHub issue connections and optional bounded Git attribution.
 - Source/full report checks, lenient enrichment handling, and optional policies.
 - Synthetic animated demo, benchmarks, and cross-platform release preparation.
+
+### Fixed
+
+- Correct width budgeting for long continuation lines after inline TODO headers.
+- Console hyperlinks close at each line boundary and reopen after indentation
+  when wrapped, keeping spacer rows and tree guides outside clickable spans.
+- Portable canonical-path handling for macOS preview checks, Windows source
+  links, and deterministic report generation through directory aliases.
+
+### Documentation
+
+- Use a relative path for the animated demo image in the README.

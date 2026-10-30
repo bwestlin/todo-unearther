@@ -43,4 +43,14 @@ release level:
     cargo release {{level}} --execute
 
 _changelog-release version:
-    @if [ "$DRY_RUN" = "true" ]; then git-cliff --unreleased --tag "v{{version}}"; else git-cliff --unreleased --tag "v{{version}}" --prepend CHANGELOG.md; fi
+    #!/usr/bin/env bash
+    set -euo pipefail
+    next=$(mktemp ./CHANGELOG.md.XXXXXX)
+    trap 'rm -f "$next"' EXIT
+    awk -v release="## {{version}} - $(date -u +%F)" \
+        '{ print } /^## Unreleased$/ { print "\n" release }' CHANGELOG.md > "$next"
+    if [[ "${DRY_RUN:-true}" == "false" ]]; then
+        mv "$next" CHANGELOG.md
+    else
+        cat "$next"
+    fi
