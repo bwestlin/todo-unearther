@@ -1,6 +1,6 @@
 [package]
 name = "todo-unearther"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "Fast TODO discovery, flexible reports, and optional GitHub and Git enrichment"
 license = "MIT"
