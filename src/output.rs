@@ -1083,18 +1083,21 @@ fn skipped(report: &ScanReport) -> String {
 }
 
 fn source_url(finding: &Finding, options: &Options) -> String {
+    // Keep native prefixes intact until URL conversion. Replacing backslashes
+    // first corrupts Windows verbatim drive and UNC paths returned by canonicalize.
+    if (options.format == Format::Console || options.absolute_source_links)
+        && let Ok(mut url) =
+            reqwest::Url::from_file_path(Path::new(&options.source_prefix).join(&finding.path))
+    {
+        url.set_fragment(Some(&format!("L{}", finding.line)));
+        return url.to_string();
+    }
     let prefix = options.source_prefix.trim_end_matches('/');
     let path = if prefix.is_empty() || prefix == "." {
         finding.path.clone()
     } else {
         format!("{prefix}/{}", finding.path)
     };
-    if (options.format == Format::Console || options.absolute_source_links)
-        && let Ok(mut url) = reqwest::Url::from_file_path(&path)
-    {
-        url.set_fragment(Some(&format!("L{}", finding.line)));
-        return url.to_string();
-    }
     let encoded = path
         .bytes()
         .map(|b| {

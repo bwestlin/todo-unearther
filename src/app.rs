@@ -158,9 +158,9 @@ pub fn run_with_opener(cli: Cli, opener: impl FnOnce(&Path) -> Result<()>) -> Re
         bail!("requested enrichment or policy evaluation did not complete (--strict)");
     }
     let source_prefix = if cli.open || format == Format::Console {
-        root.to_string_lossy().replace('\\', "/")
+        root.to_string_lossy().into_owned()
     } else {
-        source_prefix(&root, output_path, &cwd)
+        source_prefix(&root, output_path, &cwd)?
     };
     let ansi = terminal && std::env::var("TERM").is_ok_and(|term| term != "dumb");
     // An unset TERM is common on Windows and is still compatible with modern terminals.
@@ -356,7 +356,7 @@ pub fn write_atomic(path: &Path, text: &str, force: bool, allow_owned: bool) -> 
     Ok(())
 }
 
-fn source_prefix(root: &Path, output: Option<&Path>, cwd: &Path) -> String {
+fn source_prefix(root: &Path, output: Option<&Path>, cwd: &Path) -> Result<String> {
     let parent = output
         .and_then(Path::parent)
         .filter(|p| !p.as_os_str().is_empty())
@@ -366,9 +366,17 @@ fn source_prefix(root: &Path, output: Option<&Path>, cwd: &Path) -> String {
     } else {
         cwd.join(parent)
     };
-    relative_path(root, &parent)
+    // Resolve both sides consistently: Windows canonical paths have a verbatim
+    // drive prefix, and macOS temporary directories may pass through /var.
+    let root = root
+        .canonicalize()
+        .context("cannot resolve source directory")?;
+    let parent = parent
+        .canonicalize()
+        .context("cannot resolve report directory")?;
+    Ok(relative_path(&root, &parent)
         .to_string_lossy()
-        .replace('\\', "/")
+        .replace('\\', "/"))
 }
 
 fn relative_path(path: &Path, base: &Path) -> PathBuf {

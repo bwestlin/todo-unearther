@@ -107,7 +107,7 @@ pub fn scan_with_components(
     let root = root.to_path_buf();
     let excluded = globs(&config.exclude)?;
     let included = globs(&config.include)?;
-    let output = output.map(absolute_lexical);
+    let output = output.map(|path| output_in_scan_coordinates(path, &root));
     let filter_root = root.clone();
     let defaults = config.default_excludes;
     let respect = config.respect_ignore;
@@ -506,6 +506,21 @@ fn globs(patterns: &[String]) -> Result<GlobSet> {
         builder.add(Glob::new(pattern).with_context(|| format!("invalid glob {pattern:?}"))?);
     }
     Ok(builder.build()?)
+}
+
+fn output_in_scan_coordinates(path: &Path, root: &Path) -> PathBuf {
+    let path = absolute_lexical(path);
+    // Resolve aliases once, then express the output using the traversal's root
+    // spelling. This also matches Windows normal and verbatim drive prefixes,
+    // without canonicalizing every file visited by the fast scanner.
+    if let Some(name) = path.file_name()
+        && let Some(parent) = path.parent()
+        && let (Ok(parent), Ok(canonical_root)) = (parent.canonicalize(), root.canonicalize())
+        && let Ok(relative) = parent.join(name).strip_prefix(canonical_root)
+    {
+        return absolute_lexical(&root.join(relative));
+    }
+    path
 }
 
 fn absolute_lexical(path: &Path) -> PathBuf {

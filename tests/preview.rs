@@ -1,5 +1,8 @@
 use clap::Parser;
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 use todo_unearther::{app, cli::Cli, preview};
 
 #[test]
@@ -47,21 +50,32 @@ fn retained_preview_survives_return_and_opener_failure_reports_the_path() {
 #[test]
 fn open_ignores_configured_exports_and_uses_encoded_absolute_links() {
     let temp = tempfile::tempdir().unwrap();
-    fs::create_dir(temp.path().join("src")).unwrap();
-    let source = temp.path().join("src/a space#å.rs");
+    assert_encoded_preview(temp.path());
+}
+
+#[cfg(unix)]
+#[test]
+fn open_resolves_a_symlinked_scan_root_to_the_same_source_file() {
+    let temp = tempfile::tempdir().unwrap();
+    let actual = temp.path().join("actual");
+    let alias = temp.path().join("alias");
+    fs::create_dir(&actual).unwrap();
+    std::os::unix::fs::symlink(actual, &alias).unwrap();
+    assert_encoded_preview(&alias);
+}
+
+fn assert_encoded_preview(root: &Path) {
+    fs::create_dir(root.join("src")).unwrap();
+    let source = root.join("src/a space#å.rs");
     fs::write(&source, "// TODO: preview <input>\n").unwrap();
-    fs::write(
-        temp.path().join("package.json"),
-        r#"{"name":"@demo/preview"}"#,
-    )
-    .unwrap();
-    let export = temp.path().join("existing.md");
+    fs::write(root.join("package.json"), r#"{"name":"@demo/preview"}"#).unwrap();
+    let export = root.join("existing.md");
     fs::write(&export, "preserve me").unwrap();
-    let config = temp.path().join("config.toml");
+    let config = root.join("config.toml");
     fs::write(&config, "[report]\nformat='json'\noutput='existing.md'\ngroup_by='component'\ncomponent_group_by='file'\ncomponent_layout='tree'\n[policy]\nmax_total=0\n").unwrap();
     let cli = Cli::try_parse_from([
         "tool",
-        temp.path().to_str().unwrap(),
+        root.to_str().unwrap(),
         "--config",
         config.to_str().unwrap(),
         "--open",
@@ -74,7 +88,9 @@ fn open_ignores_configured_exports_and_uses_encoded_absolute_links() {
         assert!(html.contains("@demo/preview"));
         assert!(html.contains("<h2>. — @demo/preview [npm]</h2>"));
         assert!(html.contains("<h3>src/a space#å.rs</h3>"));
-        let expected = reqwest::Url::from_file_path(&source).unwrap();
+        // The CLI canonicalizes the scan root. In particular, macOS temp paths
+        // under /var resolve to /private/var; explicit aliases behave the same.
+        let expected = reqwest::Url::from_file_path(source.canonicalize().unwrap()).unwrap();
         assert!(
             html.contains(&format!("{expected}#L1")),
             "expected encoded file URL {expected} in {html}"

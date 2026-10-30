@@ -20,6 +20,8 @@
 - Correct width budgeting for long continuation lines after inline TODO headers.
 - Console hyperlinks close at each line boundary and reopen after indentation
   when wrapped, keeping spacer rows and tree guides outside clickable spans.
+- Portable canonical-path handling for macOS preview checks, Windows source
+  links, and deterministic report generation through directory aliases.
 - Title/link GitHub enrichment, with issue state retained only for explicit
   policies; removed issue-first grouping and visible parser/line-range notes.
 - Same-indent continuation comments, including issue URLs on following lines.

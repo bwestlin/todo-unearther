@@ -51,7 +51,12 @@ fn options(format: Format, width: usize) -> output::Options {
         line_spacing: 1,
         colors: false,
         links: false,
-        source_prefix: "/tmp/repository".into(),
+        source_prefix: if cfg!(windows) {
+            r"C:\tmp\repository"
+        } else {
+            "/tmp/repository"
+        }
+        .into(),
         absolute_source_links: false,
     }
 }
@@ -233,7 +238,12 @@ fn console_badges_and_clickable_compact_links_obey_render_options() {
             "{html_summary}"
         );
     }
-    assert!(text.contains("\x1b]8;;file:///tmp/repository/services/main-api/src/handlers.ts#L1"));
+    let mut source_url = reqwest::Url::from_file_path(
+        std::path::Path::new(&opts.source_prefix).join(&report.findings[0].path),
+    )
+    .unwrap();
+    source_url.set_fragment(Some("L1"));
+    assert!(text.contains(&format!("\x1b]8;;{source_url}")));
     assert!(text.contains(
         "\x1b]8;;https://github.com/UXStream/uxstream/issues/2370\x1b\\uxstream/uxstream#2370"
     ));
@@ -243,6 +253,28 @@ fn console_badges_and_clickable_compact_links_obey_render_options() {
     assert!(links_only.contains("\x1b]8;;"));
     opts.links = false;
     assert!(!output::render(&report, &opts).unwrap().contains('\x1b'));
+}
+
+#[cfg(windows)]
+#[test]
+fn absolute_source_links_preserve_verbatim_drive_and_unc_paths() {
+    let report = fixture();
+    for (prefix, expected) in [
+        (
+            r"\\?\C:\repo with spaces",
+            "file:///C:/repo%20with%20spaces/services/main-api/src/handlers.ts#L1",
+        ),
+        (
+            r"\\?\UNC\server\share\repo",
+            "file://server/share/repo/services/main-api/src/handlers.ts#L1",
+        ),
+    ] {
+        let mut opts = options(Format::Html, 100);
+        opts.absolute_source_links = true;
+        opts.source_prefix = prefix.into();
+        let text = output::render(&report, &opts).unwrap();
+        assert!(text.contains(expected), "{text}");
+    }
 }
 
 #[test]

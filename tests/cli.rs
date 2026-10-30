@@ -103,6 +103,40 @@ fn regenerating_is_deterministic_and_checks_never_write() {
     );
 }
 
+#[cfg(unix)]
+#[test]
+fn full_checks_use_the_same_links_through_an_aliased_report_directory() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("actual");
+    let alias = temp.path().join("alias");
+    fs::create_dir(&root).unwrap();
+    std::os::unix::fs::symlink(&root, &alias).unwrap();
+    fs::write(root.join("a.py"), "# TODO: task\n").unwrap();
+    for filename in ["report.json", "TODO.md", "report.html", "report.txt"] {
+        let target = alias.join(filename);
+        ok(run(&root, &["--output", target.to_str().unwrap()]));
+        let original = fs::read(&target).unwrap();
+        ok(run(&root, &["--output", target.to_str().unwrap()]));
+        assert_eq!(fs::read(&target).unwrap(), original, "{filename}");
+        let actual_target = root.join(filename);
+        ok(run(
+            &root,
+            &[
+                "--check",
+                "--compare",
+                "full",
+                "--output",
+                actual_target.to_str().unwrap(),
+            ],
+        ));
+        if filename == "TODO.md" {
+            ok(run(&root, &["--check", "--compare", "full"]));
+            let report = fs::read_to_string(target).unwrap();
+            assert!(report.contains("](./a.py#L1)"), "{report}");
+        }
+    }
+}
+
 #[test]
 fn policies_and_overwrite_protection_have_distinct_exit_codes() {
     let temp = tempfile::tempdir().unwrap();
